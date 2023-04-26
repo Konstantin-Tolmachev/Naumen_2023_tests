@@ -4,9 +4,9 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
+import static org.openqa.selenium.support.ui.ExpectedConditions.visibilityOfElementLocated;
 
 public class CartTest
 {
@@ -16,7 +16,7 @@ public class CartTest
     private By waitingBeforeEnteringTheCart = By.xpath("//*[contains(@class, 'buttons__link')]");
     private By openCart = By.xpath("//div[3]/div/div/a");
     private By numberOfItemsInTheCart = By.xpath("//nav[@id='header-search']/div/div[3]/div/div/a/span");
-    private By deleteProductToCart = By.xpath("//*[contains(@class, 'remove-button__title')]"); //remove-button__title
+    private By deleteProductToCart = By.xpath("//*[contains(@class, 'remove-button__title')]");
     private By productBlock = By.cssSelector(".cart-items__product");
     private By messageEmptyCart = By.cssSelector(".empty-message__title-empty-cart");
 
@@ -30,43 +30,52 @@ public class CartTest
     }
 
     @Test
-    public void AddItemToCart()
+    public void addItemToCart()
     {
-        driver.get(urlOpenProduct); // Открыть страницу товара
-        driver.findElement(addProductToCart).click(); // Добавить товар в избранное
+        driver.get(urlOpenProduct);
+        driver.findElement(addProductToCart).click();
 
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(60)); // Ожидание когда появится 1 у корзины
-        wait.until(ExpectedConditions.visibilityOfElementLocated(waitingBeforeEnteringTheCart));
+        wait.until(visibilityOfElementLocated(waitingBeforeEnteringTheCart));
 
-        driver.findElement(openCart).click(); // Открыть корзину
-        driver.navigate().refresh(); // Обновляю страницу, так как раз через раз отображается, что товар добавлен
+        driver.findElement(openCart).click();
+        driver.navigate().refresh();
 
         // Проверяю, что у корзины появилась "1"
         WebElement element = driver.findElement(numberOfItemsInTheCart);
         String textElement = element.getText();
         String message = String.format("В коризне неверное количество товаров. Ожидалось: %s, Получили: %s", "1", textElement);
         Assertions.assertEquals("1", textElement, message);
+
+        driver.findElement(deleteProductToCart).click();
     }
 
     @Test
-    public void DeleteItemFromCart()
+    public void deleteItemFromCart()
     {
-        driver.findElement(deleteProductToCart).click(); // Удалить товар из корзины
+        driver.get(urlOpenProduct);
+        driver.findElement(addProductToCart).click();
+        driver.findElement(openCart).click();
+        driver.navigate().refresh();
 
-        // Проверяю, что товар удалился и "карточки" товара нет на странице
-        WebElement element = null;
-        try {
-            element = driver.findElement(productBlock);
-        }
-        catch (NoSuchElementException e)
-        {
-            Assertions.fail("Товар из корзины не удален");
+       //  Проверяю, что есть карточка товара и товар удаляется.
+        if (driver.findElement(productBlock).isDisplayed()) {
+            driver.findElement(deleteProductToCart).click();
+            System.out.println("Товар удален.");
+        } else {
+            Assertions.fail("Карточка товара не удалена.");
         }
     }
 
     @Test
-    public void EmptyCartText()
+    public void emptyCartText()
     {
+        driver.get(urlOpenProduct);
+        driver.findElement(addProductToCart).click();
+        driver.findElement(openCart).click();
+        driver.navigate().refresh();
+        driver.findElement(deleteProductToCart).click();
+
         WebElement element = driver.findElement(messageEmptyCart);
         // Проверяю, что в корзине отображается текст "Корзина пуста"
         String textElement = element.getText();
